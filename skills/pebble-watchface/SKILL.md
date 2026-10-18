@@ -77,9 +77,10 @@ Run a loop after every code change. Details for each step are in Phase 4 and Pha
 pebble build                                                  # compile; again after any resource change
 python3 /path/to/pebble-render/render.py . shot.png           # writes shot.png and shot_3x.png; view shot_3x.png with the Read tool
 python3 /path/to/pebble-render/render.py . late.png --time 23:59 --12h --battery 8 --no-phone   # other scenes
+python3 /path/to/pebble-render/render.py . menu.png --press down --press select   # a screen behind button presses
 ```
 
-**Emulator loop: Alloy apps, other platforms, buttons, real-time animation, logs, and always as the final check:**
+**Emulator loop: Alloy apps, other platforms, PebbleKit JS, logs, and always as the final check:**
 
 ```bash
 pebble build                                                  # compile; fix errors before going on
@@ -368,7 +369,7 @@ For watchapps (`"watchface": false`), see [references/watchapp-guide.md](referen
 - MenuLayer/ScrollLayer call their own `*_set_click_config_onto_window()`
 - Save state with `persist_*` in window disappear
 - No MINUTE_UNIT constraint — apps redraw on input/timer, but still cancel timers when idle
-- pebble-render draws only the first window, and doesn't support MenuLayer, SimpleMenuLayer, ActionBarLayer, StatusBarLayer, ScrollLayer or PropertyAnimation yet. Test other screens, and apps built on those, in the emulator
+- pebble-render reaches any screen with `--press` (menus, action bars, scroll layers and animations included). PebbleKit JS doesn't run there: send its replies with `--message`, or check flows that depend on it in the emulator
 
 ### Alloy Implementation (instead of C)
 
@@ -427,9 +428,9 @@ If build fails:
 |---|---|
 | The app is written in C | The app is Alloy (JavaScript): pebble-render runs C only |
 | The target is emery | Testing another platform (gabbro) |
-| Checking layout, colours, text and cropping | Testing buttons, taps, real-time animation or logs |
-| Checking a watchapp's first screen | Checking screens reached with buttons |
-| You want several scenes (times, battery, phone, steps) | render.py stops with "SDK call X() is not supported", for example on MenuLayer, ActionBarLayer, StatusBarLayer, ScrollLayer or Animation |
+| Checking layout, colours, text and cropping | Testing taps, logs or real-time behaviour |
+| Checking any screen of a watchapp, reached with `--press` | The screen depends on PebbleKit JS replies you can't send with `--message` |
+| You want several scenes (times, battery, phone, steps) | render.py stops with "SDK call X() is not supported" |
 | | **Always, once, as the final check (Step 6)** |
 
 ### Fast Path: pebble-render
@@ -443,8 +444,11 @@ If build fails:
    - Battery and phone: `--battery 5`, `--charging`, `--no-phone`
    - Health: `--steps 12345 --hr 72`
    - Weather or other phone data: `--message TEMPERATURE=-12 --message CONDITIONS=Snow` (messageKeys names from package.json)
-   - Animation: `--run-ms 600` lets app timers run for 600 ms before the frame
+   - Animation: `--run-ms 600` lets timers and animations run for 600 ms before the frame; `--gif anim.gif` records it all
    - Other zones: `--tz Pacific/Auckland`
+   - Watchapp screens: `--press down --press select`, in order. Each press holds the button for 100 ms, then 500 ms pass; `--press select:1000` holds it for a second, and `--wait 2000` lets timers run
+   - Phone replies: `--message KEY=VALUE` after the press that asks for them
+   - Saved state: `--persist KEY=VALUE` (the app's persist key), or `--save-persist state.json` on one run and `--load-persist state.json` on the next, to start where it left off
 6. Check readability: `python3 /path/to/pebble-render/glance.py screenshot_emery.png` writes `screenshot_emery_glance.png`, roughly what the eye resolves on the wrist. If a number doesn't read there, make it bigger or bolder.
 7. If render.py stops with "SDK call X() is not supported", switch to the emulator path for this app.
 
@@ -588,6 +592,8 @@ python3 /path/to/skills/pebble-watchface/scripts/create_preview_gif.py . --frame
 ```
 
 Creates `preview_emery.gif` (and other platforms if their emulators are running).
+
+For C apps on emery, pebble-render records the same GIF without the emulator, and with exact timing: `python3 /path/to/pebble-render/render.py . preview_emery.png --run-ms 3000 --gif preview_emery.gif` (add `--press` for a game or app flow).
 
 **GIF caveats:**
 - The script captures **every running emulator**, including stale ones from other projects — kill emulators for platforms you don't target first (`pebble kill` and reinstall on your target), and delete any GIFs for non-target platforms.
@@ -861,6 +867,7 @@ app_message_open(128, 128);
 pebble build                                              # Build PBW
 python3 /path/to/pebble-render/render.py . shot.png       # Render without the emulator (C apps, emery)
 python3 /path/to/pebble-render/render.py . shot.png --time 23:59 --12h --battery 5   # Render another scene
+python3 /path/to/pebble-render/render.py . app.png --press select --wait 1000 --gif app.gif   # Press buttons, record a GIF
 pebble install --emulator emery                           # Test in QEMU
 pebble logs --emulator emery                              # View logs
 pebble screenshot --no-open --emulator emery              # Capture screen

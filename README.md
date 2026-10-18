@@ -155,7 +155,8 @@ Install the result on a watch with `pebble install --phone <ip>` or
   (Alloy), using the Open-Meteo API.
 - Fast iteration with pebble-render: sub-second renders of a face in
   any scene (time, 12-hour clock, battery, phone, steps, weather
-  data), or of a watchapp's first screen, with no emulator involved.
+  data), or of any watchapp screen reached with button presses, and
+  GIFs, with no emulator involved.
 - The emulator loop: `pebble build`, `pebble install --emulator emery`,
   `pebble screenshot --no-open`, `pebble emu-button`, `pebble logs`,
   and how to recover when the emulator is in a bad state.
