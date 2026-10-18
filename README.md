@@ -24,9 +24,9 @@ Last checked against SDK 4.33.1 and pebble tool 5.0.40.
   scripts.
 - Optional, recommended:
   [pebble-render](https://github.com/LiamCordelle/pebble-render) for
-  fast, emulator-free screenshots of C apps on emery. The agent asks
-  before installing it to `~/pebble-render`; set `PEBBLE_RENDER` if
-  you keep it elsewhere.
+  fast, emulator-free screenshots of C apps on emery. The agent looks
+  for an existing clone (or `PEBBLE_RENDER`) and asks before cloning
+  it.
 - A coding agent that supports Agent Skills.
 
 ## Install
@@ -153,9 +153,9 @@ Install the result on a watch with `pebble install --phone <ip>` or
   battery life, fixed-point math, resource cleanup.
 - Weather and other web data through PebbleKit JS (C) or `fetch()`
   (Alloy), using the Open-Meteo API.
-- Fast iteration with pebble-render: sub-second renders of any scene
-  (time, 12-hour clock, battery, phone, steps, weather data), with no
-  emulator involved.
+- Fast iteration with pebble-render: sub-second renders of a face in
+  any scene (time, 12-hour clock, battery, phone, steps, weather
+  data), or of a watchapp's first screen, with no emulator involved.
 - The emulator loop: `pebble build`, `pebble install --emulator emery`,
   `pebble screenshot --no-open`, `pebble emu-button`, `pebble logs`,
   and how to recover when the emulator is in a bad state.

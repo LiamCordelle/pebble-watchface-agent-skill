@@ -75,8 +75,8 @@ Run a loop after every code change. Details for each step are in Phase 4 and Pha
 
 ```bash
 pebble build                                                  # compile; again after any resource change
-python3 ~/pebble-render/render.py . shot.png                  # writes shot.png and shot_3x.png; view shot_3x.png with the Read tool
-python3 ~/pebble-render/render.py . late.png --time 23:59 --12h --battery 8 --no-phone   # other scenes
+python3 /path/to/pebble-render/render.py . shot.png           # writes shot.png and shot_3x.png; view shot_3x.png with the Read tool
+python3 /path/to/pebble-render/render.py . late.png --time 23:59 --12h --battery 8 --no-phone   # other scenes
 ```
 
 **Emulator loop: Alloy apps, other platforms, buttons, real-time animation, logs, and always as the final check:**
@@ -93,20 +93,20 @@ pebble logs --emulator emery                                  # streams APP_LOG 
 
 If the emulator misbehaves, `pebble kill` stops it and `pebble wipe` clears its stored data; then run `pebble install --emulator emery` again.
 
-### Set Up pebble-render (once)
+### Set Up pebble-render (once per machine)
 
-The commands in this skill expect pebble-render in `~/pebble-render`. Check for it:
+pebble-render is at https://github.com/LiamCordelle/pebble-render. The commands in this skill write the directory it's cloned to as `/path/to/pebble-render`.
 
-```bash
-ls "${PEBBLE_RENDER:-$HOME/pebble-render}/render.py"
-```
-
-If the user has set `PEBBLE_RENDER`, use that path in place of `~/pebble-render`. If it's missing, ask the user before installing it: setup downloads about 230 MB of PebbleOS source (about 500 MB on disk) and extracts fonts from the installed Pebble SDK.
-
-```bash
-git clone https://github.com/LiamCordelle/pebble-render ~/pebble-render
-sh ~/pebble-render/setup.sh
-```
+1. Find an existing clone. If `PEBBLE_RENDER` is set, it points at one. Otherwise search the home directory:
+   ```bash
+   find ~ -maxdepth 4 -name render.py -path '*pebble-render*' 2>/dev/null
+   ```
+2. If there's no clone, ask the user whether they have one elsewhere or want it cloned (for example to `~/pebble-render`). Setup downloads about 230 MB of PebbleOS source (about 500 MB on disk) and extracts fonts from the installed Pebble SDK:
+   ```bash
+   git clone https://github.com/LiamCordelle/pebble-render /path/to/pebble-render
+   sh /path/to/pebble-render/setup.sh
+   ```
+3. If render.py says to run setup.sh first, run `sh /path/to/pebble-render/setup.sh` once.
 
 If the user declines, or setup fails, use the emulator loop for everything.
 
@@ -368,6 +368,7 @@ For watchapps (`"watchface": false`), see [references/watchapp-guide.md](referen
 - MenuLayer/ScrollLayer call their own `*_set_click_config_onto_window()`
 - Save state with `persist_*` in window disappear
 - No MINUTE_UNIT constraint — apps redraw on input/timer, but still cancel timers when idle
+- pebble-render draws only the first window, and doesn't support MenuLayer, SimpleMenuLayer, ActionBarLayer, StatusBarLayer, ScrollLayer or PropertyAnimation yet. Test other screens, and apps built on those, in the emulator
 
 ### Alloy Implementation (instead of C)
 
@@ -427,13 +428,14 @@ If build fails:
 | The app is written in C | The app is Alloy (JavaScript): pebble-render runs C only |
 | The target is emery | Testing another platform (gabbro) |
 | Checking layout, colours, text and cropping | Testing buttons, taps, real-time animation or logs |
-| You want several scenes (times, battery, phone, steps) | render.py stops with "SDK call X() is not supported" |
+| Checking a watchapp's first screen | Checking screens reached with buttons |
+| You want several scenes (times, battery, phone, steps) | render.py stops with "SDK call X() is not supported", for example on MenuLayer, ActionBarLayer, StatusBarLayer, ScrollLayer or Animation |
 | | **Always, once, as the final check (Step 6)** |
 
 ### Fast Path: pebble-render
 
 1. `pebble build`. Rebuild after changing resources (fonts, images); code changes don't need it.
-2. Render: `python3 ~/pebble-render/render.py . screenshot_emery.png`. It also writes `screenshot_emery_3x.png`, which is easier to inspect.
+2. Render: `python3 /path/to/pebble-render/render.py . screenshot_emery.png`. It also writes `screenshot_emery_3x.png`, which is easier to inspect.
 3. View `screenshot_emery_3x.png` with the Read tool and run the Step 3 checklist below.
 4. Fix and render again. There's no install, no waiting and no emulator state to go wrong.
 5. Check the scenes the default render (10:09, battery 80%, phone connected) doesn't show. Renders are independent, so run several at once:
@@ -443,7 +445,7 @@ If build fails:
    - Weather or other phone data: `--message TEMPERATURE=-12 --message CONDITIONS=Snow` (messageKeys names from package.json)
    - Animation: `--run-ms 600` lets app timers run for 600 ms before the frame
    - Other zones: `--tz Pacific/Auckland`
-6. Check readability: `python3 ~/pebble-render/glance.py screenshot_emery.png` writes `screenshot_emery_glance.png`, roughly what the eye resolves on the wrist. If a number doesn't read there, make it bigger or bolder.
+6. Check readability: `python3 /path/to/pebble-render/glance.py screenshot_emery.png` writes `screenshot_emery_glance.png`, roughly what the eye resolves on the wrist. If a number doesn't read there, make it bigger or bolder.
 7. If render.py stops with "SDK call X() is not supported", switch to the emulator path for this app.
 
 When the face looks right, do **Step 6: Final Emulator Check** before Phase 6.
@@ -554,7 +556,7 @@ Even when every iteration used pebble-render, finish with one emulator pass. It 
 1. Start log capture (Step 0), install (Step 1) and take a screenshot (Step 2).
 2. View it with the Read tool and compare it with your last render: same layout, colours and text. For a C app on emery you can compare pixels by rendering the same minute straight after the screenshot. The emulator's battery reads 100% and it uses your computer's time zone:
    ```bash
-   python3 ~/pebble-render/render.py . check.png --date $(date +%F) --time $(date +%H:%M) --battery 100 --tz "$(readlink /etc/localtime | sed 's|.*zoneinfo/||')"
+   python3 /path/to/pebble-render/render.py . check.png --date $(date +%F) --time $(date +%H:%M) --battery 100 --tz "$(readlink /etc/localtime | sed 's|.*zoneinfo/||')"
    ```
    Anything drawn from seconds (a second hand, a minute hand that moves between minutes), animation, phone data or random elements can differ. Everything else should match pixel for pixel.
 3. If the emulator shows something else entirely (another app, the launcher, an old build), follow Emulator Hygiene and reinstall. If it shows your app and still differs from the render, trust the emulator and investigate.
@@ -857,8 +859,8 @@ app_message_open(128, 128);
 ### Build & Test Commands
 ```bash
 pebble build                                              # Build PBW
-python3 ~/pebble-render/render.py . shot.png              # Render without the emulator (C apps, emery)
-python3 ~/pebble-render/render.py . shot.png --time 23:59 --12h --battery 5   # Render another scene
+python3 /path/to/pebble-render/render.py . shot.png       # Render without the emulator (C apps, emery)
+python3 /path/to/pebble-render/render.py . shot.png --time 23:59 --12h --battery 5   # Render another scene
 pebble install --emulator emery                           # Test in QEMU
 pebble logs --emulator emery                              # View logs
 pebble screenshot --no-open --emulator emery              # Capture screen
@@ -915,7 +917,7 @@ Before building (Alloy project):
 - [ ] `@moddable/pebbleproxy` installed via `pebble package install` (if networking)
 
 Build: `pebble build`
-Iterate (C, emery): `python3 ~/pebble-render/render.py . shot.png`
+Iterate (C, emery): `python3 /path/to/pebble-render/render.py . shot.png`
 Test: `pebble install --emulator emery`
 Screenshot: `pebble screenshot --no-open --emulator emery`
 Output: `build/[name].pbw`
