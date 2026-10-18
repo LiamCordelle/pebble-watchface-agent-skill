@@ -2,10 +2,13 @@
 
 An [Agent Skill](https://agentskills.io) that teaches a coding agent to
 build Pebble watchfaces and watchapps: design the layout, write the
-project files (C or Alloy), run `pebble build`, install the result on
-the emulator, screenshot it, check the screenshot, and fix what is
-wrong. It also covers icons, preview GIFs, and publishing to the Pebble
-App Store with `pebble publish`.
+project files (C or Alloy), run `pebble build`, render a screenshot,
+check it, and fix what is wrong. For C apps on emery it iterates with
+[pebble-render](https://github.com/LiamCordelle/pebble-render), which
+draws pixel-identical screenshots in about half a second without the
+emulator. It always finishes with a check in the emulator. It also
+covers icons, preview GIFs, and publishing to the Pebble App Store with
+`pebble publish`.
 
 The skill is in `skills/pebble-watchface/`. It works with Claude Code,
 Cursor, Codex, and any other agent that reads `SKILL.md` files.
@@ -19,6 +22,11 @@ Last checked against SDK 4.33.1 and pebble tool 5.0.40.
   the SDK.
 - Python 3 with Pillow (`pip install Pillow`) for the icon and GIF
   scripts.
+- Optional, recommended:
+  [pebble-render](https://github.com/LiamCordelle/pebble-render) for
+  fast, emulator-free screenshots of C apps on emery. The agent asks
+  before installing it to `~/pebble-render`; set `PEBBLE_RENDER` if
+  you keep it elsewhere.
 - A coding agent that supports Agent Skills.
 
 ## Install
@@ -124,9 +132,11 @@ Make a watchapp that shows a countdown timer and vibrates at zero
 ```
 
 The agent follows `SKILL.md`: it picks watchface or watchapp, C or
-Alloy, writes the files, builds, installs on the emery emulator, takes
-a screenshot, looks at it, and iterates. You get `build/<name>.pbw`,
-`screenshot_emery.png`, and, for animated faces, `preview_emery.gif`.
+Alloy, writes the files, builds, renders a screenshot, looks at it, and
+iterates: with pebble-render for C apps on emery, otherwise on the
+emulator. It finishes with an emulator install, screenshot and log
+check. You get `build/<name>.pbw`, `screenshot_emery.png`, and, for
+animated faces, `preview_emery.gif`.
 
 Install the result on a watch with `pebble install --phone <ip>` or
 `pebble install --cloudpebble`. Publish with `pebble login` then
@@ -143,6 +153,9 @@ Install the result on a watch with `pebble install --phone <ip>` or
   battery life, fixed-point math, resource cleanup.
 - Weather and other web data through PebbleKit JS (C) or `fetch()`
   (Alloy), using the Open-Meteo API.
+- Fast iteration with pebble-render: sub-second renders of any scene
+  (time, 12-hour clock, battery, phone, steps, weather data), with no
+  emulator involved.
 - The emulator loop: `pebble build`, `pebble install --emulator emery`,
   `pebble screenshot --no-open`, `pebble emu-button`, `pebble logs`,
   and how to recover when the emulator is in a bad state.
