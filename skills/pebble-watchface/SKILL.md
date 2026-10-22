@@ -15,6 +15,43 @@ Generate complete, buildable Pebble watchfaces and watchapps with full PBW artif
 
 **Default target platform: Emery (Pebble Time 2, 200x228 color rectangular display).**
 
+## Existing watchfaces and shared kit ownership
+
+Before creating or updating a watchface, read the workspace/project AGENTS.md
+and check for a `shared-kit` dependency or the local `pebble-watchface-kit`
+repository. Preserve an existing project's language and kit architecture. For
+kit consumers, the kit provides lifecycle, data services and phone transport;
+the standalone C/weather templates below are not replacement implementations.
+For new C faces in a kit workspace, use the kit when its interfaces fit.
+
+For every implementation change, ask whether another face could use the logic.
+Reusable calculations/services belong in the kit even for their first consumer.
+For example, moon phase/illumination calculations belong in the kit, while moon
+artwork, placement and styling belong in the face. When touching reusable logic
+that currently lives in a face, extract it into the kit and use the shared API;
+avoid unrelated refactors. Add generic interfaces/configuration for differences.
+Keep layout, artwork, wording, assets, scenarios, face-specific settings
+semantics/persistence, UUID and app version in the consumer. Never copy/fork kit
+implementations or put consumer names in shared code.
+
+At the start of a kit-based face update, record the current kit SHA/worktree
+state, fetch its `origin/main` and inspect available changes. Use the latest
+shared, tested kit in the new watchface version. Where configured,
+`npm run kit:update` is the guarded update-only command for a clean dependency.
+Re-read upgraded kit instructions/release notes and handle compatibility changes.
+Preserve dirty/unpublished kit work; do not reset/stash/drop it or abandon commits
+to force an upgrade. Integrate through the kit workflow and report any network
+or integration blocker instead of silently using an old or unchecked kit.
+
+Validate shared and consumer tests, renders and affected runtime behaviour with
+the final kit revision. Where configured, finish with
+`npm run release -- --render`; if it advances the kit again, repeat affected
+validation. Record the kit gitlink, version/SHA and provenance with the face
+release and report the old/new dependency revisions. Use `--pinned` for an
+explicitly requested historical/pinned build, not to skip the upgrade check.
+Follow project review/publication instructions. Instructions-only work does not
+require building or publishing a watchface.
+
 ## Step 0: Choose Project Type and Language
 
 Two decisions before anything else:
